@@ -12,28 +12,38 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 //   }
 // });
 // numeral.locale("de");
+const url =
+  process.env.NODE_ENV === "production"
+    ? "https://corona.blloc.com/"
+    : "http://localhost:2019/";
 export default class Home extends Component {
   static async getInitialProps({ query }) {
     const country = query.country || "Germany";
-    const url =
-      (process.env.NODE_ENV === "production"
-        ? "https://corona.blloc.com/history?country="
-        : "http://localhost:2019/historic?country=") + country;
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url + "countries");
     return {
-      data,
-      country
+      country,
+      countries: _.sortBy(data)
     };
   }
   state = {
     selectedState: "federal",
     options: ["confirmed", "recovered", "deaths"]
   };
+  getData = async (country = this.state.country || this.props.country) => {
+    const { data } = await axios.get(url + "historic?country=" + country);
+    console.log(data);
+    this.setState({ data }, this.updateCharts);
+  };
+
+  componentDidMount = async () => {
+    await this.getData();
+    this.chart = new Chart(this.ctx, this.chartParams());
+  };
   getDataSets = () =>
     _.map(this.state.options, (option, i) => ({
       label: "# " + option + " cases",
       data: _.map(
-        _.get(this.props, "data." + this.state.selectedState, []),
+        _.get(this.state, "data." + this.state.selectedState, []),
         option
       ),
       backgroundColor: backgrounds[i],
@@ -42,7 +52,7 @@ export default class Home extends Component {
     }));
   getLabels = () =>
     _.map(
-      _.get(this.props, "data." + this.state.selectedState, []),
+      _.get(this.state, "data." + this.state.selectedState, []),
       ({ date }) => new moment(date).format("DD.MM.YY")
     );
 
@@ -94,30 +104,44 @@ export default class Home extends Component {
     }
   });
   updateCharts = () => {
+    if (!this.chart) return;
     this.chart.data.datasets = this.getDataSets();
     this.chart.data.labels = this.getLabels();
     this.chart.update();
   };
-  componentDidMount = () => {
-    console.log(this.props.data);
-    this.chart = new Chart(this.ctx, this.chartParams());
-  };
+
   addCountry = country => {};
-  changeCountry = country => {};
+  changeCountry = country => {
+    this.setState({ country }, this.getData);
+  };
   changeState = state => {
     this.setState({ selectedState: state }, this.updateCharts);
   };
+  stateSelecter = () => (
+    <select onChange={({ target }) => this.changeState(target.value)}>
+      <option value="federal">all</option>
+      {_.map(_.sortBy(_.keys(_.get(this.state, "data"))), (state, i) => (
+        <option key={i} value={state}>
+          {state}
+        </option>
+      ))}
+    </select>
+  );
+  countrySelector = () => (
+    <select onChange={({ target }) => this.changeCountry(target.value)}>
+      <option value="federal">all</option>
+      {_.map(this.props.countries, (state, i) => (
+        <option key={i} value={state}>
+          {state}
+        </option>
+      ))}
+    </select>
+  );
   render = () => (
     <>
       <div>
-        <select onChange={({ target }) => this.changeState(target.value)}>
-          <option value="federal">all</option>
-          {_.map(_.sortBy(_.keys(_.get(this.props, "data"))), (state, i) => (
-            <option key={i} value={state}>
-              {state}
-            </option>
-          ))}
-        </select>
+        {this.countrySelector()}
+        {this.stateSelecter()}
       </div>
       <div>
         <canvas i ref={r => (this.ctx = r)} width="400" height="400" />
