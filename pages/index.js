@@ -112,7 +112,11 @@ export default class Home extends Component {
       <div>
         <select onChange={({ target }) => this.changeState(target.value)}>
           <option value="federal">all</option>
-          <option value="Berlin">Berlin</option>
+          {_.map(_.sortBy(_.keys(_.get(this.props, "data"))), (state, i) => (
+            <option key={i} value={state}>
+              {state}
+            </option>
+          ))}
         </select>
       </div>
       <div>
@@ -124,14 +128,7 @@ export default class Home extends Component {
   select = () => (
     <select
       onChange={({ target }) => this.setState({ selectedState: target.value })}
-    >
-      <option value="federal">all</option>
-      {_.map(_.sortBy(_.keys(_.get(this.props, "data"))), (state, i) => (
-        <option key={i} value={state}>
-          {state}
-        </option>
-      ))}
-    </select>
+    ></select>
   );
 }
 
