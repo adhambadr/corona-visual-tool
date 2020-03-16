@@ -66,6 +66,9 @@ export default class Home extends Component {
     ", " +
     this.state.selectedState;
 
+  getYAxisScale = () =>
+    this.state.yLogScale ? 'logarithmic' : 'linear'
+
   chartParams = () => ({
     type: "line",
     data: {
@@ -102,7 +105,7 @@ export default class Home extends Component {
               callback: (label, index, labels) => numeral(label).format("0,0")
             },
             gridLines: {
-              display: false
+              display: true
             }
           }
         ]
@@ -114,6 +117,7 @@ export default class Home extends Component {
     this.chart.data.datasets = this.getDataSets();
     this.chart.options.title.text = this.getTitle();
     this.chart.data.labels = this.getLabels();
+    this.chart.options.scales.yAxes[0] = {type: this.getYAxisScale()};
     this.chart.update();
   };
 
@@ -146,11 +150,24 @@ export default class Home extends Component {
       ))}
     </select>
   );
+
+  changeYLogScale = yLogScale => {
+    this.setState({ yLogScale }, this.updateCharts);
+  };
+
+  yLogScaleCheckbox = () => (
+    <div>
+      <input type="checkbox" onChange={({ target }) => this.changeYLogScale(target.checked)}/>
+      <label className="label-inline">logscale</label>
+    </div>
+  );
+
   render = () => (
     <>
       <div className="row">
         <div className="column">{this.countrySelector()}</div>
         <div className="column">{this.stateSelecter()}</div>
+        <div className="column column-20">{this.yLogScaleCheckbox()}</div>
       </div>
       <div>
         <canvas i ref={r => (this.ctx = r)} width="400" height="400" />
