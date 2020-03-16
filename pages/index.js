@@ -5,6 +5,7 @@ import Chart from "chart.js";
 import moment from "moment";
 import numeral from "numeral";
 import ChartDataLabels from "chartjs-plugin-datalabels";
+
 // numeral.register("locale", "de", {
 //   delimiters: {
 //     thousands: ".",
@@ -59,6 +60,12 @@ export default class Home extends Component {
       ({ date }) => new moment(date).format("DD.MM.YY")
     );
 
+  getTitle = () =>
+    "Covid-19 Historic data for " +
+    this.props.country +
+    ", " +
+    this.state.selectedState;
+
   chartParams = () => ({
     type: "line",
     data: {
@@ -68,11 +75,7 @@ export default class Home extends Component {
     options: {
       title: {
         display: true,
-        text:
-          "Covid-19 Historic data for " +
-          this.props.country +
-          ", " +
-          this.state.selectedState
+        text: this.getTitle()
       },
       tooltips: {
         enabled: true
@@ -109,6 +112,7 @@ export default class Home extends Component {
   updateCharts = () => {
     if (!this.chart) return;
     this.chart.data.datasets = this.getDataSets();
+    this.chart.options.title.text = this.getTitle();
     this.chart.data.labels = this.getLabels();
     this.chart.update();
   };
@@ -144,12 +148,20 @@ export default class Home extends Component {
   );
   render = () => (
     <>
-      <div>
-        {this.countrySelector()}
-        {this.stateSelecter()}
+      <div className="row">
+        <div className="column">{this.countrySelector()}</div>
+        <div className="column">{this.stateSelecter()}</div>
       </div>
       <div>
         <canvas i ref={r => (this.ctx = r)} width="400" height="400" />
+      </div>
+      <div>
+        <h6 style={{ textAlign: "center", marginTop: 10 }}>
+          {"Made with <3 from Berlin | "}
+          <a target="blank" href="https://github.com/adhambadr/corona-api">
+            Adham Badr
+          </a>
+        </h6>
       </div>
     </>
   );
