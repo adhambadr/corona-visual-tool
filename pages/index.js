@@ -42,9 +42,12 @@ export default class Home extends Component {
   getDataSets = () =>
     _.map(this.state.options, (option, i) => ({
       label: "# " + option + " cases",
-      data: _.map(
-        _.get(this.state, "data." + this.state.selectedState, []),
-        option
+      data: _.concat(
+        _.map(
+          _.get(this.state, "data." + this.state.selectedState, []),
+          option
+        ),
+        null
       ),
       backgroundColor: backgrounds[i],
       borderColor: borders[i],
@@ -59,7 +62,7 @@ export default class Home extends Component {
   chartParams = () => ({
     type: "line",
     data: {
-      labels: this.getLabels(),
+      labels: [...this.getLabels(), ""],
       datasets: this.getDataSets()
     },
     options: {
@@ -112,7 +115,7 @@ export default class Home extends Component {
 
   addCountry = country => {};
   changeCountry = country => {
-    this.setState({ country }, this.getData);
+    this.setState({ country, selectedState: "federal" }, this.getData);
   };
   changeState = state => {
     this.setState({ selectedState: state }, this.updateCharts);
