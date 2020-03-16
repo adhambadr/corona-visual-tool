@@ -40,19 +40,26 @@ export default class Home extends Component {
       borderColor: borders[i],
       borderWidth: 1
     }));
-  chartParams = {
+  getLabels = () =>
+    _.map(
+      _.get(this.props, "data." + this.state.selectedState, []),
+      ({ date }) => new moment(date).format("DD.MM.YY")
+    );
+
+  chartParams = () => ({
     type: "line",
     data: {
-      labels: _.map(
-        _.get(this.props, "data." + this.state.selectedState, []),
-        ({ date }) => new moment(date).format("DD.MM.YY")
-      ),
+      labels: this.getLabels(),
       datasets: this.getDataSets()
     },
     options: {
       title: {
         display: true,
-        text: "Covid-19 Historic data for " + this.props.country
+        text:
+          "Covid-19 Historic data for " +
+          this.props.country +
+          ", " +
+          this.state.selectedState
       },
       tooltips: {
         enabled: true
@@ -60,6 +67,7 @@ export default class Home extends Component {
       plugins: {
         datalabels: {
           align: "top",
+          display: "auto",
           formatter: (val, context) => numeral(val).format("0,0")
         }
       },
@@ -84,15 +92,33 @@ export default class Home extends Component {
         ]
       }
     }
+  });
+  updateCharts = () => {
+    this.chart.data.datasets = this.getDataSets();
+    this.chart.data.labels = this.getLabels();
+    this.chart.update();
   };
   componentDidMount = () => {
     console.log(this.props.data);
-    const myChart = new Chart(this.ctx, this.chartParams);
+    this.chart = new Chart(this.ctx, this.chartParams());
+  };
+  addCountry = country => {};
+  changeCountry = country => {};
+  changeState = state => {
+    this.setState({ selectedState: state }, this.updateCharts);
   };
   render = () => (
-    <div>
-      <canvas i ref={r => (this.ctx = r)} width="400" height="400" />
-    </div>
+    <>
+      <div>
+        <select onChange={({ target }) => this.changeState(target.value)}>
+          <option value="federal">all</option>
+          <option value="Berlin">Berlin</option>
+        </select>
+      </div>
+      <div>
+        <canvas i ref={r => (this.ctx = r)} width="400" height="400" />
+      </div>
+    </>
   );
 
   select = () => (
