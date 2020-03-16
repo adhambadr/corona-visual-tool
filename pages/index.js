@@ -27,11 +27,11 @@ export default class Home extends Component {
   }
   state = {
     selectedState: "federal",
+    country: this.props.country,
     options: ["confirmed", "recovered", "deaths"]
   };
   getData = async (country = this.state.country || this.props.country) => {
     const { data } = await axios.get(url + "historic?country=" + country);
-    console.log(data);
     this.setState({ data }, this.updateCharts);
   };
 
@@ -131,8 +131,10 @@ export default class Home extends Component {
     </select>
   );
   countrySelector = () => (
-    <select onChange={({ target }) => this.changeCountry(target.value)}>
-      <option value="federal">all</option>
+    <select
+      onChange={({ target }) => this.changeCountry(target.value)}
+      value={this.state.country}
+    >
       {_.map(this.props.countries, (state, i) => (
         <option key={i} value={state}>
           {state}
