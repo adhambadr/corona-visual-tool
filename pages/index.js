@@ -58,10 +58,7 @@ export default class Home extends Component {
     );
 
   getTitle = () =>
-    "Covid-19 Historic data for " +
-    this.props.country +
-    ", " +
-    this.state.selectedState;
+    `Covid-19 Historic data for ${this.state.country}, ${this.state.selectedState}`;
 
   getYAxisScale = () => (this.state.yLogScale ? "logarithmic" : "linear");
 
