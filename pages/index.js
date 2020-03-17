@@ -42,13 +42,10 @@ export default class Home extends Component {
   };
   getDataSets = () =>
     _.map(this.state.options, (option, i) => ({
-      label: "# " + option + " cases",
-      data: _.concat(
-        _.map(
-          _.get(this.state, "data." + this.state.selectedState, []),
-          option
-        ),
-        null
+      label: "# " + option,
+      data: _.map(
+        _.get(this.state, "data." + this.state.selectedState, []),
+        option
       ),
       backgroundColor: backgrounds[i],
       borderColor: borders[i],
@@ -66,16 +63,16 @@ export default class Home extends Component {
     ", " +
     this.state.selectedState;
 
-  getYAxisScale = () =>
-    this.state.yLogScale ? 'logarithmic' : 'linear'
+  getYAxisScale = () => (this.state.yLogScale ? "logarithmic" : "linear");
 
   chartParams = () => ({
     type: "line",
     data: {
-      labels: [...this.getLabels(), ""],
+      labels: this.getLabels(),
       datasets: this.getDataSets()
     },
     options: {
+      maintainAspectRatio: false,
       title: {
         display: true,
         text: this.getTitle()
@@ -117,7 +114,7 @@ export default class Home extends Component {
     this.chart.data.datasets = this.getDataSets();
     this.chart.options.title.text = this.getTitle();
     this.chart.data.labels = this.getLabels();
-    this.chart.options.scales.yAxes[0] = {type: this.getYAxisScale()};
+    this.chart.options.scales.yAxes[0] = { type: this.getYAxisScale() };
     this.chart.update();
   };
 
@@ -157,30 +154,33 @@ export default class Home extends Component {
 
   yLogScaleCheckbox = () => (
     <div>
-      <input type="checkbox" onChange={({ target }) => this.changeYLogScale(target.checked)}/>
+      <input
+        type="checkbox"
+        onChange={({ target }) => this.changeYLogScale(target.checked)}
+      />
       <label className="label-inline">logscale</label>
     </div>
   );
 
   render = () => (
-    <>
+    <div className="container">
       <div className="row">
         <div className="column">{this.countrySelector()}</div>
         <div className="column">{this.stateSelecter()}</div>
         <div className="column column-20">{this.yLogScaleCheckbox()}</div>
       </div>
       <div>
-        <canvas i ref={r => (this.ctx = r)} width="400" height="400" />
+        <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctx = r)} />
       </div>
       <div>
-        <h6 style={{ textAlign: "center", marginTop: 10 }}>
+        <h6>
           {"Made with <3 from Berlin | "}
           <a target="blank" href="https://github.com/adhambadr/corona-api">
             Adham Badr
           </a>
         </h6>
       </div>
-    </>
+    </div>
   );
 
   select = () => (
