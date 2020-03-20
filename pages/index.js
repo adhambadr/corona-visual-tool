@@ -19,7 +19,7 @@ const url =
     : "http://localhost:2019/";
 export default class Home extends Component {
   static async getInitialProps({ query }) {
-    const country = query.country || "Germany";
+    const country = query.country || "France";
     const { data } = await axios.get(url + "countries");
     return {
       country,
@@ -174,7 +174,7 @@ export default class Home extends Component {
       </div>
       <div>
         <h6>
-          {"Made with <3 from Berlin | "}
+          {"Berlin | "}
           <a target="blank" href="https://github.com/adhambadr/corona-api">
             Adham Badr
           </a>
