@@ -52,14 +52,17 @@ export default class Home extends Component {
       borderWidth: 1
     }));
   getLabels = () =>
-    _.map(
-      _.get(this.state, "data." + this.state.selectedState, []),
-      ({ date }) => new moment(date).format("DD.MM.YY")
+    _.concat(
+      _.map(
+        _.get(this.state, "data." + this.state.selectedState, []),
+        ({ date }) => new moment(date).format("DD.MM.YY")
+      ),
+      [""] // Spacing the graph to see last number
     );
 
   getTitle = () =>
     "Covid-19 Historic data for " +
-    this.props.country +
+    this.state.country +
     ", " +
     this.state.selectedState;
 
@@ -127,7 +130,7 @@ export default class Home extends Component {
   };
   stateSelecter = () => (
     <select onChange={({ target }) => this.changeState(target.value)}>
-      <option value="federal">all</option>
+      <option value="federal">select a state</option>
       {_.map(_.sortBy(_.keys(_.get(this.state, "data"))), (state, i) => (
         <option key={i} value={state}>
           {state}
