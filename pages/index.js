@@ -32,28 +32,43 @@ export default class Home extends Component {
     options: ["confirmed", "recovered", "deaths"],
     addedCountries: []
   };
-  getData = async (country = this.state.country || this.props.country) => {
-    if (!this.props.countries.includes(country))
-      return console.log("Country not found");
+  getData = async () => {
+    const mainCountry = this.state.country || this.props.country;
+    const data = await this.getCountryData(mainCountry);
+    const extraData = [];
+    for (const country of this.state.addedCountries)
+      extraData.push(await this.getCountryData(country));
+    this.setState({ data, extraData }, this.updateCharts);
+  };
+
+  getCountryData = async country => {
+    if (!this.props.countries.includes(country)) return []; // console.log("Country not found");
     const { data } = await axios.get(url + "historic?country=" + country);
-    this.setState({ data }, this.updateCharts);
+    return data;
   };
 
   componentDidMount = async () => {
     await this.getData();
     this.chart = new Chart(this.ctx, this.chartParams());
   };
-  getDataSets = () =>
+  getDataSet = (data, index = 0) =>
     _.map(this.state.options, (option, i) => ({
       label: "# " + option,
-      data: _.map(
-        _.get(this.state, "data." + this.state.selectedState, []),
-        option
-      ),
-      backgroundColor: backgrounds[i],
-      borderColor: borders[i],
+      data: _.map(data, option),
+      backgroundColor: backgrounds[index][i],
+      borderColor: borders[index][i],
       borderWidth: 1
     }));
+  getDataSets = data => [
+    ...this.getDataSet(
+      _.get(this.state, "data." + this.state.selectedState, [])
+    ),
+    ..._.concat(
+      ..._.map(this.state.addedCountries, (country, i) =>
+        this.getDataSet(_.get(this.state.extraData[i], "federal", []))
+      )
+    )
+  ];
   getLabels = () =>
     _.concat(
       _.map(
@@ -136,8 +151,8 @@ export default class Home extends Component {
     this.setState(
       {
         addedCountries
-      }
-      // this.getData
+      },
+      this.getData
     );
   };
   changeState = state => {
@@ -257,16 +272,14 @@ export default class Home extends Component {
 }
 
 const backgrounds = [
-  "rgba(255, 99, 132, 0.2)",
-  "rgba(54, 162, 235, 0.2)",
-  "rgba(0, 0, 0, 0.2)",
-  "rgba(75, 192, 192, 0.2)"
+  ["rgba(255, 99, 132, 0.2)", "rgba(54, 162, 235, 0.2)", "rgba(0, 0, 0, 0.2)"],
+  [
+    "rgba(75, 192, 192, 0.2)",
+    "rgba(235, 64, 52 , 0.2",
+    "rgba(52, 235, 89 , 0.2"
+  ]
 ];
 const borders = [
-  "rgba(255, 99, 132, 1)",
-  "rgba(54, 162, 235, 1)",
-  "rgba(0, 0, 0, 1)",
-  "rgba(75, 192, 192, 1)",
-  "rgba(153, 102, 255, 1)",
-  "rgba(255, 159, 64, 1)"
+  ["rgba(255, 99, 132, 1)", "rgba(54, 162, 235, 1)", "rgba(0, 0, 0, 1)"],
+  ["rgba(75, 192, 192, 1)", "rgba(153, 102, 255, 1)", "rgba(255, 159, 64, 1)"]
 ];
