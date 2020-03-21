@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.12.1",
     "@zeit/next-sass": "^1.0.1",
     "axios": "^0.19.2",
     "chart.js": "^2.9.3",

@@ -29,7 +29,8 @@ export default class Home extends Component {
   state = {
     selectedState: "federal",
     country: this.props.country,
-    options: ["confirmed", "recovered", "deaths"]
+    options: ["confirmed", "recovered", "deaths"],
+    addedCountries: []
   };
   getData = async (country = this.state.country || this.props.country) => {
     if (!this.props.countries.includes(country))
@@ -125,8 +126,19 @@ export default class Home extends Component {
   };
 
   addCountry = country => {};
-  changeCountry = country => {
-    this.setState({ country, selectedState: "federal" }, this.getData);
+  changeCountry = (country, index) => {
+    if (index === 0)
+      return this.setState({ country, selectedState: "federal" }, this.getData);
+
+    const addedCountries = this.state.addedCountries;
+    addedCountries[index - 1] = country;
+
+    this.setState(
+      {
+        addedCountries
+      }
+      // this.getData
+    );
   };
   changeState = state => {
     this.setState({ selectedState: state }, this.updateCharts);
@@ -147,14 +159,16 @@ export default class Home extends Component {
         .value()}
     </select>
   );
-  countrySelector = () => (
+  countrySelector = ({ countries = this.props.countries, index = 0 } = {}) => (
     <select
-      onChange={({ target }) => this.changeCountry(target.value)}
-      value={this.state.country}
+      onChange={({ target }) => this.changeCountry(target.value, index)}
+      value={
+        index == 0 ? this.state.country : this.state.addedCountries[index - 1]
+      }
     >
       <option value="World">Worldwide - Select a country</option>
       {_.map(
-        _.filter(this.props.countries, country => !_.eq(country, "global")),
+        _.filter(countries, country => !_.eq(country, "global")),
         (state, i) => (
           <option key={i} value={state}>
             {state}
@@ -178,13 +192,49 @@ export default class Home extends Component {
     </div>
   );
 
+  selectors = () =>
+    _.map(
+      [this.state.country, ...this.state.addedCountries],
+      (country, index) => (
+        <div className="row" key={index}>
+          <div className="column">{this.countrySelector({ index })}</div>
+          {index === 0 && <div className="column">{this.stateSelecter()}</div>}
+          {index === 0 ? (
+            <div className="column column-20">{this.yLogScaleCheckbox()}</div>
+          ) : (
+            <button
+              style={{ maxWidth: "25px", fontSize: "25" }}
+              class="button"
+              onClick={() =>
+                this.setState({
+                  addedCountries: _.filter(
+                    this.state.addedCountries,
+                    (val, i) => i !== index - 1
+                  )
+                })
+              }
+            >
+              -
+            </button>
+          )}
+        </div>
+      )
+    );
+
   render = () => (
     <div className="container">
-      <div className="row">
-        <div className="column">{this.countrySelector()}</div>
-        <div className="column">{this.stateSelecter()}</div>
-        <div className="column column-20">{this.yLogScaleCheckbox()}</div>
-      </div>
+      {this.selectors()}
+      <button
+        style={{ maxWidth: "25px", fontSize: "25" }}
+        class="button"
+        onClick={() =>
+          this.setState({
+            addedCountries: [...this.state.addedCountries, "World"]
+          })
+        }
+      >
+        +
+      </button>
       <div>
         <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctx = r)} />
       </div>
