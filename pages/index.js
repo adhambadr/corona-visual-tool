@@ -19,7 +19,7 @@ const url =
     : "http://localhost:2019/";
 export default class Home extends Component {
   static async getInitialProps({ query }) {
-    const country = query.country || "Germany";
+    const country = query.country || "World";
     const { data } = await axios.get(url + "countries");
     return {
       country,
@@ -32,6 +32,8 @@ export default class Home extends Component {
     options: ["confirmed", "recovered", "deaths"]
   };
   getData = async (country = this.state.country || this.props.country) => {
+    if (!this.props.countries.includes(country))
+      return console.log("Country not found");
     const { data } = await axios.get(url + "historic?country=" + country);
     this.setState({ data }, this.updateCharts);
   };
@@ -61,7 +63,11 @@ export default class Home extends Component {
     );
 
   getTitle = () =>
-    `Covid-19 Historic data for ${this.state.country}, ${this.state.selectedState}`;
+    `Covid-19 Historic data for ${this.state.country}${
+      this.state.selectedState && this.state.selectedState != "federal"
+        ? ", " + this.state.selectedState
+        : ""
+    }`;
 
   getYAxisScale = () => (this.state.yLogScale ? "logarithmic" : "linear");
 
@@ -127,12 +133,18 @@ export default class Home extends Component {
   };
   stateSelecter = () => (
     <select onChange={({ target }) => this.changeState(target.value)}>
-      <option value="federal">select a state</option>
-      {_.map(_.sortBy(_.keys(_.get(this.state, "data"))), (state, i) => (
-        <option key={i} value={state}>
-          {state}
-        </option>
-      ))}
+      <option value="federal">All - Select a state</option>
+      {_.chain(this.state)
+        .get("data")
+        .keys()
+        .sortBy()
+        .filter(s => !_.eq(s, "federal"))
+        .map((state, i) => (
+          <option key={i} value={state}>
+            {state}
+          </option>
+        ))
+        .value()}
     </select>
   );
   countrySelector = () => (
@@ -140,11 +152,15 @@ export default class Home extends Component {
       onChange={({ target }) => this.changeCountry(target.value)}
       value={this.state.country}
     >
-      {_.map(this.props.countries, (state, i) => (
-        <option key={i} value={state}>
-          {state}
-        </option>
-      ))}
+      <option value="World">Worldwide - Select a country</option>
+      {_.map(
+        _.filter(this.props.countries, country => !_.eq(country, "global")),
+        (state, i) => (
+          <option key={i} value={state}>
+            {state}
+          </option>
+        )
+      )}
     </select>
   );
 
