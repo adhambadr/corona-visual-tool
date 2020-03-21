@@ -29,7 +29,7 @@ export default class Home extends Component {
   state = {
     selectedState: "federal",
     country: this.props.country,
-    options: ["confirmed", "recovered", "deaths"]
+    options: ["confirmed", "recovered", "deaths", "predicted"]
   };
   getData = async (country = this.state.country || this.props.country) => {
     if (!this.props.countries.includes(country))
