@@ -51,8 +51,8 @@ export default class Home extends Component {
     console.log(this.getDataSets());
     this.chart = new Chart(this.ctx, this.chartParams());
   };
-  getGraph = (data, option, i) => ({
-    label: "# " + option,
+  getGraph = (data, option, i, country = "") => ({
+    label: "# " + (country + " ") + option,
     data: _.map(data, option),
     backgroundColor: backgrounds[i],
     borderColor: borders[i],
@@ -65,7 +65,12 @@ export default class Home extends Component {
       ? _.map(
           [...this.state.addedCountries, this.state.country],
           (country, i) =>
-            this.getGraph(this.state.data[country].federal, "confirmed", i)
+            this.getGraph(
+              this.state.data[country].federal,
+              "confirmed",
+              i,
+              country
+            )
         )
       : this.getDataSet(
           _.get(
