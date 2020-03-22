@@ -30,7 +30,8 @@ export default class Home extends Component {
     selectedState: "federal",
     country: this.props.country,
     options: ["confirmed", "recovered", "deaths"],
-    addedCountries: ["Italy"]
+    addedCountries: ["Italy"],
+    comparisonPoint: "confirmed"
   };
   getData = async () => {
     const mainCountry = this.state.country || this.props.country;
@@ -90,7 +91,7 @@ export default class Home extends Component {
           (country, i) =>
             this.getGraph(
               this.state.data[country].federal,
-              "confirmed",
+              this.state.comparisonPoint,
               i,
               country
             )
@@ -178,7 +179,25 @@ export default class Home extends Component {
     this.chart.update();
   };
 
-  addCountry = country => {};
+  s = country => {
+    this.setState(
+      {
+        addedCountries: [...this.state.addedCountries, "World"]
+      },
+      this.getData
+    );
+  };
+  removeCountry = index => {
+    this.setState(
+      {
+        addedCountries: _.filter(
+          this.state.addedCountries,
+          (val, i) => i !== index - 1
+        )
+      },
+      this.updateCharts
+    );
+  };
   changeCountry = (country, index) => {
     if (index === 0)
       return this.setState({ country, selectedState: "federal" }, this.getData);
@@ -258,14 +277,7 @@ export default class Home extends Component {
             <button
               style={{ maxWidth: "25px", fontSize: "25" }}
               className="button"
-              onClick={() =>
-                this.setState({
-                  addedCountries: _.filter(
-                    this.state.addedCountries,
-                    (val, i) => i !== index - 1
-                  )
-                })
-              }
+              onClick={() => this.removeCountry(index)}
             >
               -
             </button>
@@ -274,17 +286,31 @@ export default class Home extends Component {
       )
     );
 
+  comparisonSelector = () => (
+    <>
+      <p style={{ margin: 0 }}>Country Comparison</p>
+      <select
+        onChange={({ target }) =>
+          this.setState({ comparisonPoint: target.value }, this.updateCharts)
+        }
+        value={this.state.comparisonPoint}
+      >
+        <option value="confirmed">Confirmed cases</option>
+        <option value="recovered">Recovered cases</option>
+        <option value="deaths">Deaths</option>
+      </select>
+    </>
+  );
+
   render = () => (
     <div className="container">
+      {_.size(this.state.addedCountries) > 0 && this.comparisonSelector()}
       {this.selectors()}
+
       <button
         style={{ maxWidth: "25px", fontSize: "25" }}
         className="button"
-        onClick={() =>
-          this.setState({
-            addedCountries: [...this.state.addedCountries, "World"]
-          })
-        }
+        onClick={this.s}
       >
         +
       </button>
