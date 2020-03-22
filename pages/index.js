@@ -272,7 +272,7 @@ export default class Home extends Component {
           <div className="column">{this.countrySelector({ index })}</div>
           {index === 0 && <div className="column">{this.stateSelecter()}</div>}
           {index === 0 ? (
-            <div className="column column-20">{this.yLogScaleCheckbox()}</div>
+            <div className="column">{this.yLogScaleCheckbox()}</div>
           ) : (
             <button
               style={{ maxWidth: "25px", fontSize: "25" }}
@@ -288,24 +288,28 @@ export default class Home extends Component {
 
   comparisonSelector = () => (
     <>
-      <p style={{ margin: 0 }}>Country Comparison</p>
       <select
         onChange={({ target }) =>
           this.setState({ comparisonPoint: target.value }, this.updateCharts)
         }
         value={this.state.comparisonPoint}
+        style={{ maxWidth: "150px" }}
       >
-        <option value="confirmed">Confirmed cases</option>
-        <option value="recovered">Recovered cases</option>
-        <option value="deaths">Deaths</option>
+        <option value="confirmed">Compare confirmed</option>
+        <option value="recovered">Compare recovered</option>
+        <option value="deaths">Compare deaths</option>
       </select>
     </>
   );
 
   render = () => (
     <div className="container">
-      {_.size(this.state.addedCountries) > 0 && this.comparisonSelector()}
-      {this.selectors()}
+      <div className="row">
+        <div className="selectors-container">
+          {_.size(this.state.addedCountries) > 0 && this.comparisonSelector()}
+          {this.selectors()}
+        </div>
+      </div>
 
       <button
         style={{ maxWidth: "25px", fontSize: "25" }}
@@ -326,12 +330,6 @@ export default class Home extends Component {
         </h6>
       </div>
     </div>
-  );
-
-  select = () => (
-    <select
-      onChange={({ target }) => this.setState({ selectedState: target.value })}
-    ></select>
   );
 }
 

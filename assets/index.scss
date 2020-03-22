@@ -22,9 +22,12 @@ body {
 			margin-bottom: 10;
 			font-size: 11;
 		}
-	}
-}
 
-select {
-	height: 2.5rem;
+		select {
+			// max-width: 250px;
+			max-height: 3rem;
+		}
+		.label-inline {
+		}
+	}
 }
