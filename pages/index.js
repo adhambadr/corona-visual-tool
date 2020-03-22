@@ -63,6 +63,19 @@ export default class Home extends Component {
     });
     return data;
   };
+  isInDataRange = ({ date }) => {
+    const { selectedRange = {} } = this.state;
+    const { min, max } = selectedRange;
+    if (!min && !max) return true;
+    const rangeData = _.chain(this.state.data)
+      .get(this.state.country)
+      .get("federal")
+      .map("date")
+      .value();
+    const minValue = rangeData[min];
+    const maxValue = rangeData[max];
+    return date >= minValue && date <= maxValue;
+  };
   dateRange = () => {
     if (!_.size(this.state.data)) return;
     const rangeData = _.chain(this.state.data)
@@ -102,9 +115,12 @@ export default class Home extends Component {
           marks={marks}
           defaultValue={[min, max]}
           onChange={range =>
-            this.setState({
-              selectedRange: { min: _.first(range), max: _.last(range) }
-            })
+            this.setState(
+              {
+                selectedRange: { min: _.first(range), max: _.last(range) }
+              },
+              this.updateCharts
+            )
           }
         />
       </div>
@@ -124,7 +140,7 @@ export default class Home extends Component {
   };
   getGraph = (data, option, i, country = "") => ({
     label: "# " + (country + " ") + option,
-    data: _.map(data, option),
+    data: _.map(_.filter(data, this.isInDataRange), option),
     backgroundColor: backgrounds[i % backgrounds.length],
     borderColor: borders[i % borders.length],
     borderWidth: 1
@@ -152,17 +168,12 @@ export default class Home extends Component {
         );
 
   getLabels = () =>
-    _.concat(
-      _.map(
-        _.get(
-          this.state,
-          "data." + this.state.country + "." + this.state.selectedState,
-          []
-        ),
-        ({ date }) => new moment(date).format("DD.MM.YY")
-      ),
-      [""] // Spacing the graph to see last number
-    );
+    _.chain(this.state)
+      .get("data." + this.state.country + "." + this.state.selectedState, [])
+      .filter(this.isInDataRange)
+      .map(({ date }) => new moment(date).format("DD.MM.YY"))
+      .concat("")
+      .value();
 
   getTitle = () =>
     `Covid-19 Historic data for ${this.state.country}${
