@@ -34,11 +34,10 @@ export default class Home extends Component {
   };
   getData = async () => {
     const mainCountry = this.state.country || this.props.country;
-    const data = await this.getCountryData(mainCountry);
-    const extraData = [];
+    const data = { [mainCountry]: await this.getCountryData(mainCountry) };
     for (const country of this.state.addedCountries)
-      extraData.push(await this.getCountryData(country));
-    this.setState({ data, extraData }, this.updateCharts);
+      if (!data[country]) data[country] = await this.getCountryData(country);
+    this.setState({ data }, this.updateCharts);
   };
 
   getCountryData = async country => {
@@ -49,30 +48,41 @@ export default class Home extends Component {
 
   componentDidMount = async () => {
     await this.getData();
+    console.log(this.getDataSets());
     this.chart = new Chart(this.ctx, this.chartParams());
   };
+  getGraph = (data, option, i) => ({
+    label: "# " + option,
+    data: _.map(data, option),
+    backgroundColor: backgrounds[i],
+    borderColor: borders[i],
+    borderWidth: 1
+  });
   getDataSet = (data, index = 0) =>
-    _.map(this.state.options, (option, i) => ({
-      label: "# " + option,
-      data: _.map(data, option),
-      backgroundColor: backgrounds[index][i],
-      borderColor: borders[index][i],
-      borderWidth: 1
-    }));
-  getDataSets = data => [
-    ...this.getDataSet(
-      _.get(this.state, "data." + this.state.selectedState, [])
-    ),
-    ..._.concat(
-      ..._.map(this.state.addedCountries, (country, i) =>
-        this.getDataSet(_.get(this.state.extraData[i], "federal", []))
-      )
-    )
-  ];
+    _.map(this.state.options, (option, i) => this.getGraph(data, option, i));
+  getDataSets = () =>
+    _.size(this.state.addedCountries) > 0
+      ? _.map(
+          [...this.state.addedCountries, this.state.country],
+          (country, i) =>
+            this.getGraph(this.state.data[country].federal, "confirmed", i)
+        )
+      : this.getDataSet(
+          _.get(
+            this.state,
+            "data." + this.state.country + "." + this.state.selectedState,
+            []
+          )
+        );
+
   getLabels = () =>
     _.concat(
       _.map(
-        _.get(this.state, "data." + this.state.selectedState, []),
+        _.get(
+          this.state,
+          "data." + this.state.country + "." + this.state.selectedState,
+          []
+        ),
         ({ date }) => new moment(date).format("DD.MM.YY")
       ),
       [""] // Spacing the graph to see last number
@@ -219,7 +229,7 @@ export default class Home extends Component {
           ) : (
             <button
               style={{ maxWidth: "25px", fontSize: "25" }}
-              class="button"
+              className="button"
               onClick={() =>
                 this.setState({
                   addedCountries: _.filter(
@@ -241,7 +251,7 @@ export default class Home extends Component {
       {this.selectors()}
       <button
         style={{ maxWidth: "25px", fontSize: "25" }}
-        class="button"
+        className="button"
         onClick={() =>
           this.setState({
             addedCountries: [...this.state.addedCountries, "World"]
@@ -272,14 +282,18 @@ export default class Home extends Component {
 }
 
 const backgrounds = [
-  ["rgba(255, 99, 132, 0.2)", "rgba(54, 162, 235, 0.2)", "rgba(0, 0, 0, 0.2)"],
-  [
-    "rgba(75, 192, 192, 0.2)",
-    "rgba(235, 64, 52 , 0.2",
-    "rgba(52, 235, 89 , 0.2"
-  ]
+  "rgba(255, 99, 132, 0.2)",
+  "rgba(54, 162, 235, 0.2)",
+  "rgba(0, 0, 0, 0.2)",
+  "rgba(75, 192, 192, 0.2)",
+  "rgba(235, 64, 52 , 0.2",
+  "rgba(52, 235, 89 , 0.2"
 ];
 const borders = [
-  ["rgba(255, 99, 132, 1)", "rgba(54, 162, 235, 1)", "rgba(0, 0, 0, 1)"],
-  ["rgba(75, 192, 192, 1)", "rgba(153, 102, 255, 1)", "rgba(255, 159, 64, 1)"]
+  "rgba(255, 99, 132, 1)",
+  "rgba(54, 162, 235, 1)",
+  "rgba(0, 0, 0, 1)",
+  "rgba(75, 192, 192, 1)",
+  "rgba(153, 102, 255, 1)",
+  "rgba(255, 159, 64, 1)"
 ];
