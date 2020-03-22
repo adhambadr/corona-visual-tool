@@ -6,6 +6,7 @@ import moment from "moment";
 import numeral from "numeral";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Range } from "rc-slider";
+import NumericInput from "react-numeric-input";
 // numeral.register("locale", "de", {
 //   delimiters: {
 //     thousands: ".",
@@ -30,8 +31,9 @@ export default class Home extends Component {
     selectedState: "federal",
     country: this.props.country,
     options: ["confirmed", "recovered", "deaths"],
-    addedCountries: [],
-    comparisonPoint: "confirmed"
+    addedCountries: ["Italy"],
+    comparisonPoint: "confirmed",
+    countryDateOffset: {}
   };
   getData = async () => {
     const mainCountry = this.state.country || this.props.country;
@@ -42,6 +44,11 @@ export default class Home extends Component {
     data = this.normalizeData(data);
     this.setState({ data }, this.updateCharts);
   };
+  getCountryData = async country => {
+    if (!this.props.countries.includes(country)) return []; // console.log("Country not found");
+    const { data } = await axios.get(url + "historic?country=" + country);
+    return data;
+  };
 
   // only from 2 countries comparison
   normalizeData = data => {
@@ -49,15 +56,12 @@ export default class Home extends Component {
     _.map(data, ({ federal }, country) => {
       if (_.size(federal) > max) max = _.size(federal);
     });
-    const emptyPoint = {
-      confirmed: 0,
-      deaths: 0,
-      recovered: 0
-    };
     _.map(data, ({ federal }, country) => {
       if (_.size(federal) < max)
         data[country].federal = [
-          ..._.map(_.range(max - _.size(federal)), f => emptyPoint),
+          ..._.map(_.range(max - _.size(federal)), f =>
+            _.first(data[country].federal)
+          ),
           ...federal
         ];
     });
@@ -88,7 +92,7 @@ export default class Home extends Component {
       _.mapKeys(rangeData, (date, n) => n),
       date => ({
         label: date,
-        style: { transform: "rotate(-45deg)", "margin-left": "-25px" }
+        style: { transform: "rotate(-45deg)", marginLeft: "-25px" }
       })
     );
 
@@ -127,10 +131,16 @@ export default class Home extends Component {
     );
   };
 
-  getCountryData = async country => {
-    if (!this.props.countries.includes(country)) return []; // console.log("Country not found");
-    const { data } = await axios.get(url + "historic?country=" + country);
-    return data;
+  verschiebCountry = (country, offset) => {
+    this.setState(
+      {
+        countryDateOffset: {
+          ...this.state.countryDateOffset,
+          [country]: offset
+        }
+      },
+      this.updateCharts
+    );
   };
 
   componentDidMount = async () => {
@@ -138,13 +148,28 @@ export default class Home extends Component {
 
     this.chart = new Chart(this.ctx, this.chartParams());
   };
-  getGraph = (data, option, i, country = "") => ({
-    label: "# " + (country + " ") + option,
-    data: _.map(_.filter(data, this.isInDataRange), option),
-    backgroundColor: backgrounds[i % backgrounds.length],
-    borderColor: borders[i % borders.length],
-    borderWidth: 1
-  });
+  getGraph = (data, option, i, country = "") => {
+    let processed = _.map(_.filter(data, this.isInDataRange), option);
+
+    const offset = _.get(this.state.countryDateOffset, country, 0);
+    console.log(_.map(_.range(offset < 0 ? offset : 0), d => null));
+    if (offset) {
+      processed = [
+        ..._.map(_.range(offset > 0 ? offset : 0), d => null),
+        ...processed
+      ];
+      if (offset < 0)
+        processed = _.takeRight(processed, _.size(processed) - -1 * offset);
+    }
+
+    return {
+      label: "# " + (country + " ") + option,
+      data: processed,
+      backgroundColor: backgrounds[i % backgrounds.length],
+      borderColor: borders[i % borders.length],
+      borderWidth: 1
+    };
+  };
   getDataSet = (data, index = 0) =>
     _.map(this.state.options, (option, i) => this.getGraph(data, option, i));
   getDataSets = () =>
@@ -328,17 +353,28 @@ export default class Home extends Component {
       (country, index) => (
         <div className="row" key={index}>
           <div className="column">{this.countrySelector({ index })}</div>
-          {index === 0 && <div className="column">{this.stateSelecter()}</div>}
+
           {index === 0 ? (
-            <div className="column">{this.yLogScaleCheckbox()}</div>
+            <>
+              <div className="column">{this.stateSelecter()}</div>
+              <div className="column">{this.yLogScaleCheckbox()}</div>
+            </>
           ) : (
-            <button
-              style={{ maxWidth: "25px", fontSize: "25" }}
-              className="button"
-              onClick={() => this.removeCountry(index)}
-            >
-              -
-            </button>
+            <>
+              <NumericInput
+                min={-60}
+                max={60}
+                value={_.get(this.state.countryDateOffset, country, 0)}
+                onChange={val => this.verschiebCountry(country, val)}
+              />
+              <button
+                style={{ maxWidth: "25px", fontSize: "25" }}
+                className="button"
+                onClick={() => this.removeCountry(index)}
+              >
+                -
+              </button>
+            </>
           )}
         </div>
       )
