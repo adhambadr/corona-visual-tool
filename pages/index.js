@@ -19,7 +19,7 @@ const url =
     : "http://localhost:2019/";
 export default class Home extends Component {
   static async getInitialProps({ query }) {
-    const country = query.country || "World";
+    const country = query.country || "Germany";
     const { data } = await axios.get(url + "countries");
     return {
       country,
@@ -30,14 +30,37 @@ export default class Home extends Component {
     selectedState: "federal",
     country: this.props.country,
     options: ["confirmed", "recovered", "deaths"],
-    addedCountries: []
+    addedCountries: ["Italy"]
   };
   getData = async () => {
     const mainCountry = this.state.country || this.props.country;
-    const data = { [mainCountry]: await this.getCountryData(mainCountry) };
+    let data = { [mainCountry]: await this.getCountryData(mainCountry) };
     for (const country of this.state.addedCountries)
       if (!data[country]) data[country] = await this.getCountryData(country);
+    //if(_.size(this.stat.addedCountries))
+    data = this.normalizeData(data);
     this.setState({ data }, this.updateCharts);
+  };
+
+  // only from 2 countries comparison
+  normalizeData = data => {
+    let max = 0;
+    _.map(data, ({ federal }, country) => {
+      if (_.size(federal) > max) max = _.size(federal);
+    });
+    const emptyPoint = {
+      confirmed: 0,
+      deaths: 0,
+      recovered: 0
+    };
+    _.map(data, ({ federal }, country) => {
+      if (_.size(federal) < max)
+        data[country].federal = [
+          ..._.map(_.range(max - _.size(federal)), f => emptyPoint),
+          ...federal
+        ];
+    });
+    return data;
   };
 
   getCountryData = async country => {
@@ -48,7 +71,7 @@ export default class Home extends Component {
 
   componentDidMount = async () => {
     await this.getData();
-    console.log(this.getDataSets());
+
     this.chart = new Chart(this.ctx, this.chartParams());
   };
   getGraph = (data, option, i, country = "") => ({
