@@ -5,7 +5,7 @@ import Chart from "chart.js";
 import moment from "moment";
 import numeral from "numeral";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-
+import { Range } from "rc-slider";
 // numeral.register("locale", "de", {
 //   delimiters: {
 //     thousands: ".",
@@ -30,7 +30,7 @@ export default class Home extends Component {
     selectedState: "federal",
     country: this.props.country,
     options: ["confirmed", "recovered", "deaths"],
-    addedCountries: ["Italy"],
+    addedCountries: [],
     comparisonPoint: "confirmed"
   };
   getData = async () => {
@@ -63,6 +63,53 @@ export default class Home extends Component {
     });
     return data;
   };
+  dateRange = () => {
+    if (!_.size(this.state.data)) return;
+    const rangeData = _.chain(this.state.data)
+      .get(this.state.country)
+      .get("federal")
+      .map("date")
+      .map(d => new moment(d).format("DD.MM"))
+      .value();
+    const marks = _.mapValues(
+      _.mapKeys(rangeData, (date, n) => n),
+      date => ({
+        label: date,
+        style: { transform: "rotate(-45deg)", "margin-left": "-25px" }
+      })
+    );
+
+    const min = 0;
+    const max = _.size(rangeData) - 1;
+    const selectedRange = [
+      _.get(this.state, "selectedRange.min", min),
+      _.get(this.state, "selectedRange.max", max)
+    ];
+    // console.log(min, max);
+    return (
+      <div style={{ marginBottom: "25px", padding: "0 25px" }}>
+        <p style={{ textAlign: "center", margin: 0 }}>
+          {rangeData[selectedRange[0]] +
+            ".2020 - " +
+            rangeData[selectedRange[1]] +
+            ".2020"}
+        </p>
+        <Range
+          min={min}
+          allowCross={false}
+          max={max}
+          step={1}
+          marks={marks}
+          defaultValue={[min, max]}
+          onChange={range =>
+            this.setState({
+              selectedRange: { min: _.first(range), max: _.last(range) }
+            })
+          }
+        />
+      </div>
+    );
+  };
 
   getCountryData = async country => {
     if (!this.props.countries.includes(country)) return []; // console.log("Country not found");
@@ -78,8 +125,8 @@ export default class Home extends Component {
   getGraph = (data, option, i, country = "") => ({
     label: "# " + (country + " ") + option,
     data: _.map(data, option),
-    backgroundColor: backgrounds[i],
-    borderColor: borders[i],
+    backgroundColor: backgrounds[i % backgrounds.length],
+    borderColor: borders[i % borders.length],
     borderWidth: 1
   });
   getDataSet = (data, index = 0) =>
@@ -179,7 +226,7 @@ export default class Home extends Component {
     this.chart.update();
   };
 
-  s = country => {
+  addCountry = country => {
     this.setState(
       {
         addedCountries: [...this.state.addedCountries, "World"]
@@ -314,10 +361,11 @@ export default class Home extends Component {
       <button
         style={{ maxWidth: "25px", fontSize: "25" }}
         className="button"
-        onClick={this.s}
+        onClick={this.addCountry}
       >
         +
       </button>
+      <div>{this.dateRange()}</div>
       <div>
         <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctx = r)} />
       </div>
