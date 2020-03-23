@@ -41,6 +41,7 @@ export default class Home extends Component {
   componentDidMount = async () => {
     await this.getData();
     this.chart = new Chart(this.ctx, this.chartParams());
+    this.barChart = new Chart(this.ctxBarChart, this.barChartParams());
   };
   getDataSets = () =>
     _.map(this.state.options, (option, i) => ({
@@ -61,15 +62,52 @@ export default class Home extends Component {
       ),
       [""] // Spacing the graph to see last number
     );
-
-  getTitle = () =>
-    `Covid-19 Historic data for ${this.state.country}${
+  
+  getFullCountryName = () => 
+    `${this.state.country}${
       this.state.selectedState && this.state.selectedState != "federal"
         ? ", " + this.state.selectedState
         : ""
-    }`;
+    }`
+
+  getTitle = () => `Covid-19 Historic data for ${this.getFullCountryName()}`;
+  
+  getDeltaChartTitle = () => `Day-to-day delta for ${this.getFullCountryName()}`;
 
   getYAxisScale = () => (this.state.yLogScale ? "logarithmic" : "linear");
+
+  deltaFromDataSets(datasets) {
+    let deltaDatasets = Array.from(datasets);
+    deltaDatasets.forEach((dataset, idx) => {
+      dataset = Object.assign({}, datasets[idx]);
+      for (let idx = dataset["data"].length - 1; idx > 0; idx -= 1) {
+        dataset["data"][idx] -= dataset["data"][idx - 1];
+      }
+    })
+    return deltaDatasets
+  }
+
+  barChartParams = () => ({
+    type: 'bar',
+    data: {
+      labels: this.getLabels(),
+      datasets: this.deltaFromDataSets(this.getDataSets())
+    },
+    options: {
+      maintainAspectRatio: false,
+      title: {
+        display: true,
+        text: this.getDeltaChartTitle()
+      },
+      scales: {
+          yAxes: [{
+              ticks: {
+                  beginAtZero: true
+              }
+          }]
+      }
+    }
+  })
 
   chartParams = () => ({
     type: "line",
@@ -115,13 +153,27 @@ export default class Home extends Component {
       }
     }
   });
-  updateCharts = () => {
+
+  updateLineChart = () => {
     if (!this.chart) return;
     this.chart.data.datasets = this.getDataSets();
     this.chart.options.title.text = this.getTitle();
     this.chart.data.labels = this.getLabels();
     this.chart.options.scales.yAxes[0] = { type: this.getYAxisScale() };
     this.chart.update();
+  };
+  
+  updateBarChart = () => {
+    if (!this.barChart) return;
+    this.barChart.data.datasets = this.deltaFromDataSets(this.getDataSets());
+    this.barChart.options.title.text = this.getDeltaChartTitle();
+    this.barChart.data.labels = this.getLabels();
+    this.barChart.options.scales.yAxes[0] = { type: this.getYAxisScale() };
+    this.barChart.update();
+  }
+  updateCharts = () => {
+    this.updateLineChart();
+    this.updateBarChart();
   };
 
   addCountry = country => {};
@@ -187,6 +239,9 @@ export default class Home extends Component {
       </div>
       <div>
         <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctx = r)} />
+      </div>
+      <div>
+        <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctxBarChart = r)} />
       </div>
       <div>
         <h6>
