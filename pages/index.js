@@ -6,19 +6,12 @@ import moment from "moment";
 import numeral from "numeral";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
-// numeral.register("locale", "de", {
-//   delimiters: {
-//     thousands: ".",
-//     decimal: ","
-//   }
-// });
-// numeral.locale("de");
 const url =
   process.env.NODE_ENV === "production"
     ? "https://corona.blloc.com/"
     : "http://localhost:2019/";
 export default class Home extends Component {
-  static async getInitialProps({ query }) {
+  static async getInitialProps({ query, req }) {
     const country = query.country || "World";
     const { data } = await axios.get(url + "countries");
     return {
@@ -26,6 +19,7 @@ export default class Home extends Component {
       countries: _.sortBy(data)
     };
   }
+
   state = {
     selectedState: "federal",
     country: this.props.country,
@@ -39,6 +33,7 @@ export default class Home extends Component {
   };
 
   componentDidMount = async () => {
+    require("chartjs-plugin-zoom");
     await this.getData();
     this.chart = new Chart(this.ctx, this.chartParams());
     this.barChart = new Chart(this.ctxBarChart, this.barChartParams());
@@ -62,17 +57,18 @@ export default class Home extends Component {
       ),
       [""] // Spacing the graph to see last number
     );
-  
-  getFullCountryName = () => 
+
+  getFullCountryName = () =>
     `${this.state.country}${
       this.state.selectedState && this.state.selectedState != "federal"
         ? ", " + this.state.selectedState
         : ""
-    }`
+    }`;
 
   getTitle = () => `Covid-19 Historic data for ${this.getFullCountryName()}`;
-  
-  getDeltaChartTitle = () => `Day-to-day delta for ${this.getFullCountryName()}`;
+
+  getDeltaChartTitle = () =>
+    `Day-to-day delta for ${this.getFullCountryName()}`;
 
   getYAxisScale = () => (this.state.yLogScale ? "logarithmic" : "linear");
 
@@ -83,12 +79,12 @@ export default class Home extends Component {
       for (let idx = dataset["data"].length - 1; idx > 0; idx -= 1) {
         dataset["data"][idx] -= dataset["data"][idx - 1];
       }
-    })
-    return deltaDatasets
+    });
+    return deltaDatasets;
   }
 
   barChartParams = () => ({
-    type: 'bar',
+    type: "bar",
     data: {
       labels: this.getLabels(),
       datasets: this.deltaFromDataSets(this.getDataSets())
@@ -100,14 +96,16 @@ export default class Home extends Component {
         text: this.getDeltaChartTitle()
       },
       scales: {
-          yAxes: [{
-              ticks: {
-                  beginAtZero: true
-              }
-          }]
+        yAxes: [
+          {
+            ticks: {
+              beginAtZero: true
+            }
+          }
+        ]
       }
     }
-  })
+  });
 
   chartParams = () => ({
     type: "line",
@@ -129,6 +127,16 @@ export default class Home extends Component {
           align: "top",
           display: "auto",
           formatter: (val, context) => numeral(val).format("0,0")
+        },
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: "x"
+          },
+          zoom: {
+            enabled: true,
+            mode: "x"
+          }
         }
       },
       scales: {
@@ -162,7 +170,7 @@ export default class Home extends Component {
     this.chart.options.scales.yAxes[0] = { type: this.getYAxisScale() };
     this.chart.update();
   };
-  
+
   updateBarChart = () => {
     if (!this.barChart) return;
     this.barChart.data.datasets = this.deltaFromDataSets(this.getDataSets());
@@ -170,7 +178,7 @@ export default class Home extends Component {
     this.barChart.data.labels = this.getLabels();
     this.barChart.options.scales.yAxes[0] = { type: this.getYAxisScale() };
     this.barChart.update();
-  }
+  };
   updateCharts = () => {
     this.updateLineChart();
     this.updateBarChart();
@@ -241,7 +249,10 @@ export default class Home extends Component {
         <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctx = r)} />
       </div>
       <div>
-        <canvas style={{ padding: "5px 30px" }} ref={r => (this.ctxBarChart = r)} />
+        <canvas
+          style={{ padding: "5px 30px" }}
+          ref={r => (this.ctxBarChart = r)}
+        />
       </div>
       <div>
         <h6>
