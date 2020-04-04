@@ -28,7 +28,7 @@ export default class Home extends Component {
     ]
   };
   componentDidMount = async () => {
-    console.log(this.state.country);
+    if (this.props.country) this.countrySelected(this.props.country);
   };
   getLocation = async () => {
     // console.log("Getting location");
@@ -43,6 +43,7 @@ export default class Home extends Component {
     <CountriesSelector
       countries={this.props.countries}
       onChange={this.countrySelected}
+      defaultValue={this.state.country}
     />
   );
   render = () => (
@@ -53,7 +54,7 @@ export default class Home extends Component {
           <h4>{_.sample(this.state.suggestions)}</h4>
           <h5>{this.state.country}</h5>
           <button
-            className="outlnied"
+            className="button-outline button-white"
             onClick={() => this.setState({ queried: false })}
           >
             try another country
