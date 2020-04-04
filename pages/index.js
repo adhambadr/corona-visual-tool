@@ -3,6 +3,7 @@ import _ from "lodash";
 import geolocation from "geolocation";
 import axios from "axios";
 import CountriesSelector from "../components/countrySelector.js";
+import Head from "next/head";
 const url = process.env.URL || "https://corona.blloc.com/";
 export default class Home extends Component {
   static async getInitialProps({ req }) {
@@ -48,6 +49,10 @@ export default class Home extends Component {
   );
   render = () => (
     <div className="main">
+      <Head>
+        <title>Did we flatten the curve yet?</title>
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+      </Head>
       {this.state.queried ? (
         <>
           <h2>{this.state.result}</h2>
